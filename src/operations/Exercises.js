@@ -1,6 +1,8 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabase';
 
-export async function getExercises() {
+export async function fetchExercises(
+    setExercises,
+) {
     try {
         const { data, error } = await supabase
             .from('exercises')
@@ -11,7 +13,7 @@ export async function getExercises() {
             return;
         }
 
-        return data;
+        setExercises(data);
     } catch (error) {
         alert(error.message);
     }
