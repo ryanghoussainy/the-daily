@@ -54,12 +54,14 @@ export async function updateExercise(id, name) {
     }
 }
 
-export async function deleteExercise(id) {
+export async function deleteExercise(
+    exerciseName
+) {
     try {
         const { data, error } = await supabase
             .from('exercises')
             .delete()
-            .eq('id', id)
+            .eq("name", exerciseName);
 
         if (error) {
             alert(error.message);

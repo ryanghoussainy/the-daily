@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { createExercise, fetchExercises } from "../operations/Exercises";
+import { createExercise, deleteExercise, fetchExercises } from "../operations/Exercises";
 import Colours from "../config/Colours";
 import { Input } from "@rneui/themed";
 
@@ -38,6 +38,7 @@ export default function ExercisesScreen() {
   const [selectedExerciseModalVisible, setSelectedExerciseModalVisible] = useState(false);
 
   // Selected exercise name
+  const [selectedExerciseName, setSelectedExerciseName] = useState("");
 
   const handleAddExercise = async () => {
     if (newExerciseName == "" || !nameAvailable) {
@@ -52,11 +53,24 @@ export default function ExercisesScreen() {
     await fetchExercises(setExercises);
   }
 
+  const handleDeleteExercise = async () => {
+    await deleteExercise(selectedExerciseName);
+
+    setSelectedExerciseModalVisible(false);
+    setSelectedExerciseName("");
+
+    // Refresh exercises
+    await fetchExercises(setExercises);
+  }
+
   // Render each exercise as a button
   const renderExerciseButton = ({ item }) => (
     <TouchableOpacity
       style={styles.exerciseButton}
-      onPress={() => console.log(item.name)}
+      onPress={() => {
+        setSelectedExerciseName(item.name);
+        setSelectedExerciseModalVisible(true);
+      }}
     >
       <Text style={styles.exerciseText}>{item.name}</Text>
     </TouchableOpacity>
@@ -107,6 +121,30 @@ export default function ExercisesScreen() {
                 
                 <TouchableOpacity style={styles.submitButton} onPress={handleAddExercise}>
                     <Text style={styles.submitButtonText}>Create</Text>
+                </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal for selecting exercise */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={selectedExerciseModalVisible}
+        onRequestClose={() => setSelectedExerciseModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{selectedExerciseName}</Text>
+
+            <View style={styles.sideBySide}>
+                <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedExerciseModalVisible(false)}>
+                    <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.submitButton} onPress={handleDeleteExercise}>
+                    <Text style={styles.submitButtonText}>Delete</Text>
                 </TouchableOpacity>
             </View>
           </View>
