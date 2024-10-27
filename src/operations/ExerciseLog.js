@@ -1,18 +1,21 @@
+import { supabase } from "../lib/supabase"
 
-
-export async function fetchLog(personID) {
+export async function fetchLogs(
+    personName,
+    setLogs,
+) {
     try {
         const { data, error } = await supabase
             .from('exerciselog')
             .select("*")
-            .eq('id', personID);
+            .eq("person", personName);
 
         if (error) {
             alert(error.message);
             return;
         }
 
-        return data;
+        setLogs(data);
     } catch (error) {
         alert(error.message);
     }
