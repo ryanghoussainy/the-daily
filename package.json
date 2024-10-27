@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@rneui/themed": "^4.0.0-rc.8",
     "@supabase/supabase-js": "^2.45.6",
     "expo": "^52.0.19",
     "expo-status-bar": "~2.0.0",

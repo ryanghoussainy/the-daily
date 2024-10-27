@@ -5,5 +5,5 @@ export default Colours = {
     buttonbg: "#777",
     text: "#fff",
     blue: "#03dac6",
-    grey: "#bbb"
+    grey: "#bbb",
 }

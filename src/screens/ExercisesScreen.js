@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { createExercise, fetchExercises } from "../operations/Exercises";
 import Colours from "../config/Colours";
+import { Input } from "@rneui/themed";
 
 export default function ExercisesScreen() {
   // Get exercises
@@ -25,8 +26,21 @@ export default function ExercisesScreen() {
   // New name of exercise
   const [newExerciseName, setNewExerciseName] = useState("");
 
+  // New name is available
+  const [nameAvailable, setNameAvailable] = useState(true);
+  useEffect(() => {
+    setNameAvailable(
+        !exercises.map((item) => item.name).includes(newExerciseName)
+    );
+  }, [newExerciseName])
+
+  // Selected exercise modal
+  const [selectedExerciseModalVisible, setSelectedExerciseModalVisible] = useState(false);
+
+  // Selected exercise name
+
   const handleAddExercise = async () => {
-    if (newExerciseName == "") {
+    if (newExerciseName == "" || !nameAvailable) {
         return;
     }
 
@@ -76,13 +90,14 @@ export default function ExercisesScreen() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Exercise</Text>
-            <TextInput
+            <Text style={styles.modalTitle}>Add Exercise</Text>
+            <Input
               style={styles.input}
               placeholder="Exercise Name"
               value={newExerciseName}
               onChangeText={setNewExerciseName}
               placeholderTextColor={Colours.grey}
+              errorMessage={nameAvailable ? "" : "This exercise already exists"}
             />
 
             <View style={styles.sideBySide}>
@@ -170,11 +185,8 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    borderColor: "#ccc",
-    borderWidth: 1,
     borderRadius: 5,
     padding: 10,
-    marginBottom: 20,
     color: Colours.text,
   },
   submitButton: {
