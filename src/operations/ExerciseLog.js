@@ -18,10 +18,10 @@ export async function fetchLogs(personName, setLogs) {
   }
 }
 
-export async function createLog(personID, exerciseID, date, reps) {
+export async function createLog(personName, exerciseID, date, reps) {
   try {
-    const { data, error } = await supabase.from("exerciselog").insert({
-      person: personID,
+    const { error } = await supabase.from("exerciselog").insert({
+      person: personName,
       exercise: exerciseID,
       date,
       reps,
@@ -31,8 +31,6 @@ export async function createLog(personID, exerciseID, date, reps) {
       alert(error.message);
       return;
     }
-
-    return data;
   } catch (error) {
     alert(error.message);
   }
