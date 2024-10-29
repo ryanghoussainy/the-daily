@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
   FlatList,
   Modal,
   StyleSheet,
@@ -7,15 +8,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  createExercise,
-  deleteExercise,
-  fetchExercises,
-} from "../operations/Exercises";
+import { createExercise, fetchExercises } from "../operations/Exercises";
 import Colours from "../config/Colours";
 import { Input } from "@rneui/themed";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { Picker } from "@react-native-picker/picker";
+import { createLog } from "../operations/ExerciseLog";
 
 export default function ExercisesScreen() {
   // Navigation
@@ -47,7 +46,7 @@ export default function ExercisesScreen() {
     useState(false);
 
   // Selected exercise name
-  const [selectedExerciseName, setSelectedExerciseName] = useState("");
+  const [selectedExercise, setSelectedExercise] = useState({});
 
   const handleAddExercise = async () => {
     if (newExerciseName == "" || !nameAvailable) {
@@ -62,28 +61,45 @@ export default function ExercisesScreen() {
     await fetchExercises(setExercises);
   };
 
-  const handleDeleteExercise = async () => {
-    await deleteExercise(selectedExerciseName);
-
-    setSelectedExerciseModalVisible(false);
-    setSelectedExerciseName("");
-
-    // Refresh exercises
-    await fetchExercises(setExercises);
-  };
-
   // Render each exercise as a button
   const renderExerciseButton = ({ item }) => (
     <TouchableOpacity
       style={styles.exerciseButton}
       onPress={() => {
-        setSelectedExerciseName(item.name);
+        setSelectedExercise(item);
         setSelectedExerciseModalVisible(true);
       }}
     >
       <Text style={styles.exerciseText}>{item.name}</Text>
     </TouchableOpacity>
   );
+
+  // Picker selected number
+  const [selectedNumber, setSelectedNumber] = useState(0);
+
+  // Loading state for waiting for a log to be created
+  const [createLogLoading, setCreateLogLoading] = useState(false);
+
+  const handleCreateLog = async () => {
+    // Close current modal
+    setSelectedExerciseModalVisible(false);
+
+    setCreateLogLoading(true);
+
+    await createLog(
+      "Ryan",
+      selectedExercise.id,
+      new Date().toISOString(),
+      selectedNumber
+    );
+
+    setCreateLogLoading(false);
+  };
+
+  const handleCloseExerciseModal = () => {
+    setSelectedExerciseModalVisible(false);
+    setSelectedNumber(0);
+  }
 
   return (
     <View style={styles.container}>
@@ -97,16 +113,17 @@ export default function ExercisesScreen() {
         numColumns={2}
         key="exerciseList"
       />
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setAddExerciseModalVisible(true)}
-      >
-        <Text style={styles.addButtonText}>+ ADD</Text>
-      </TouchableOpacity>
+      <View style={styles.bottomRight}>
+        <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setAddExerciseModalVisible(true)}
+        >
+            <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Modal for adding a new exercise */}
       <Modal
-        animationType="fade"
         transparent={true}
         visible={addExerciseModalVisible}
         onRequestClose={() => setAddExerciseModalVisible(false)}
@@ -144,30 +161,55 @@ export default function ExercisesScreen() {
 
       {/* Modal for selecting exercise */}
       <Modal
-        animationType="fade"
         transparent={true}
         visible={selectedExerciseModalVisible}
-        onRequestClose={() => setSelectedExerciseModalVisible(false)}
+        onRequestClose={handleCloseExerciseModal}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{selectedExerciseName}</Text>
+            <Text style={styles.modalTitle}>{selectedExercise.name}</Text>
 
+            {/* Form to enter values */}
+            <Picker
+              selectedValue={selectedNumber}
+              style={styles.picker}
+              onValueChange={(itemValue) => setSelectedNumber(itemValue)}
+              dropdownIconColor={Colours.blue}
+            >
+              {Array.from({ length: 1000 }, (_, i) => (
+                <Picker.Item key={i} label={`${i}`} value={i} />
+              ))}
+            </Picker>
+
+            {/* Bottom Buttons */}
             <View style={styles.sideBySide}>
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={() => setSelectedExerciseModalVisible(false)}
+                onPress={handleCloseExerciseModal}
               >
                 <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.submitButton}
-                onPress={handleDeleteExercise}
+                onPress={handleCreateLog}
               >
-                <Text style={styles.submitButtonText}>Delete</Text>
+                <Text style={styles.submitButtonText}>✓ Confirm</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal for loading (waiting for log creation) */}
+      <Modal
+        transparent={true}
+        visible={createLogLoading}
+        onRequestClose={() => setCreateLogLoading(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { width: "40%" }]}>
+            <ActivityIndicator size={35} color={Colours.blue}/>
           </View>
         </View>
       </Modal>
@@ -211,6 +253,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     margin: 10,
     flex: 1,
+    height: 200,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -221,15 +264,15 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: Colours.blue,
-    borderRadius: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    marginTop: 20,
+    borderRadius: 25,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
     alignItems: "center",
+
   },
   addButtonText: {
     color: Colours.text,
-    fontSize: 16,
+    fontSize: 28,
   },
   modalContainer: {
     flex: 1,
@@ -288,5 +331,17 @@ const styles = StyleSheet.create({
     height: 45,
     alignItems: "center",
     justifyContent: "center",
+  },
+  picker: {
+    height: 50,
+    width: 200,
+    color: Colours.text,
+    marginVertical: 30,
+  },
+  bottomRight: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    width: "90%",
+    marginBottom: 15,
   },
 });
