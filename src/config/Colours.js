@@ -6,4 +6,5 @@ export default Colours = {
     text: "#fff",
     blue: "#03dac6",
     grey: "#bbb",
+    darkgrey: "#3c3c3c"
 }

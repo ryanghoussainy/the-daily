@@ -4,15 +4,23 @@ import {
   Modal,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { createExercise, deleteExercise, fetchExercises } from "../operations/Exercises";
+import {
+  createExercise,
+  deleteExercise,
+  fetchExercises,
+} from "../operations/Exercises";
 import Colours from "../config/Colours";
 import { Input } from "@rneui/themed";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 export default function ExercisesScreen() {
+  // Navigation
+  const navigation = useNavigation();
+
   // Get exercises
   const [exercises, setExercises] = useState([]);
 
@@ -30,19 +38,20 @@ export default function ExercisesScreen() {
   const [nameAvailable, setNameAvailable] = useState(true);
   useEffect(() => {
     setNameAvailable(
-        !exercises.map((item) => item.name).includes(newExerciseName)
+      !exercises.map((item) => item.name).includes(newExerciseName)
     );
-  }, [newExerciseName])
+  }, [newExerciseName]);
 
   // Selected exercise modal
-  const [selectedExerciseModalVisible, setSelectedExerciseModalVisible] = useState(false);
+  const [selectedExerciseModalVisible, setSelectedExerciseModalVisible] =
+    useState(false);
 
   // Selected exercise name
   const [selectedExerciseName, setSelectedExerciseName] = useState("");
 
   const handleAddExercise = async () => {
     if (newExerciseName == "" || !nameAvailable) {
-        return;
+      return;
     }
 
     setAddExerciseModalVisible(false);
@@ -51,7 +60,7 @@ export default function ExercisesScreen() {
 
     // Refresh exercises
     await fetchExercises(setExercises);
-  }
+  };
 
   const handleDeleteExercise = async () => {
     await deleteExercise(selectedExerciseName);
@@ -61,7 +70,7 @@ export default function ExercisesScreen() {
 
     // Refresh exercises
     await fetchExercises(setExercises);
-  }
+  };
 
   // Render each exercise as a button
   const renderExerciseButton = ({ item }) => (
@@ -115,13 +124,19 @@ export default function ExercisesScreen() {
             />
 
             <View style={styles.sideBySide}>
-                <TouchableOpacity style={styles.closeButton} onPress={() => setAddExerciseModalVisible(false)}>
-                    <Text style={styles.closeButtonText}>Close</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.submitButton} onPress={handleAddExercise}>
-                    <Text style={styles.submitButtonText}>Create</Text>
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setAddExerciseModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleAddExercise}
+              >
+                <Text style={styles.submitButtonText}>Create</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -139,17 +154,31 @@ export default function ExercisesScreen() {
             <Text style={styles.modalTitle}>{selectedExerciseName}</Text>
 
             <View style={styles.sideBySide}>
-                <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedExerciseModalVisible(false)}>
-                    <Text style={styles.closeButtonText}>Close</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.submitButton} onPress={handleDeleteExercise}>
-                    <Text style={styles.submitButtonText}>Delete</Text>
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setSelectedExerciseModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleDeleteExercise}
+              >
+                <Text style={styles.submitButtonText}>Delete</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
+      {/* Back button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back-outline" size={28} color={Colours.text} />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -250,5 +279,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     paddingHorizontal: 15,
+  },
+  backButton: {
+    position: "absolute",
+    top: 45,
+    left: 30,
+    width: 45,
+    height: 45,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
