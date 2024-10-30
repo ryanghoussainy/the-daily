@@ -65,3 +65,22 @@ export async function deleteExercise(exerciseName) {
     alert(error.message);
   }
 }
+
+export async function getExerciseName(exerciseID) {
+  try {
+    const { data, error } = await supabase
+      .from("exercises")
+      .select("name")
+      .eq("id", exerciseID)
+      .single();
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    return data;
+  } catch (error) {
+    alert(error.message);
+  }
+}

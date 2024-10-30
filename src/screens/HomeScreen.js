@@ -4,6 +4,7 @@ import Svg, { Path } from "react-native-svg";
 import Colours from "../config/Colours";
 import { useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
+import { AntDesign } from "@expo/vector-icons"
 
 export default function HomeScreen() {
   // Dynamic width in case of resizing
@@ -21,6 +22,18 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Title */}
+      <Text style={styles.title}>THE DAILY</Text>
+
+      {/* Veritical dotted line down the middle */}
+      <View style={styles.middleLine} />
+
+      {/* Stats box */}
+      <TouchableOpacity style={[styles.box, styles.rightBox]} onPress={() => navigation.navigate("Stats")}>
+        <AntDesign name="linechart" size={80} color={Colours.blue} style={styles.chartIcon}/>
+        <Text style={styles.boxTitle}>Stats</Text>
+      </TouchableOpacity>
+
       {/* Bottom curved shape */}
       <View style={styles.curvedContainer}>
         <Svg
@@ -52,7 +65,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colours.bg,
     alignItems: "center",
-    justifyContent: "flex-end",
   },
   curvedContainer: {
     width: "100%",
@@ -80,5 +92,41 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: "bold",
     color: "white",
+  },
+  title: {
+    color: Colours.title,
+    fontSize: 45,
+    marginTop: 50,
+  },
+  middleLine: {
+    borderLeftWidth: 1,
+    borderColor: Colours.text,
+    height: 600,
+    borderStyle: "dotted",
+    marginTop: 20,
+  },
+  box: {
+    width: "40%",
+    height: "20%",
+    borderRadius: 10,
+    borderWidth: 0.7,
+    borderColor: Colours.lightblue,
+    position: "absolute",
+    top: "35%",
+    alignItems: "center",
+  },
+  rightBox: {
+    right: "5%",
+  },
+  leftBox: {
+    left: "5%",
+  },
+  boxTitle: {
+    color: Colours.text,
+    fontSize: 18,
+    marginTop: 15,
+  },
+  chartIcon: {
+    marginTop: 30,
   },
 });
