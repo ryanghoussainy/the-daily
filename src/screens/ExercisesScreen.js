@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
+  ActivityIndicator,
   FlatList,
   Modal,
   StyleSheet,
@@ -77,29 +77,22 @@ export default function ExercisesScreen() {
   // Picker selected number
   const [selectedNumber, setSelectedNumber] = useState(0);
 
-  // Loading state for waiting for a log to be created
-  const [createLogLoading, setCreateLogLoading] = useState(false);
-
   const handleCreateLog = async () => {
     // Close current modal
     setSelectedExerciseModalVisible(false);
 
-    setCreateLogLoading(true);
-
     await createLog(
       "Ryan",
-      selectedExercise.id,
-      new Date().toISOString(),
-      selectedNumber
+      selectedExercise.name,
+      new Date().toISOString(), // today
+      selectedNumber // number of reps
     );
-
-    setCreateLogLoading(false);
   };
 
   const handleCloseExerciseModal = () => {
     setSelectedExerciseModalVisible(false);
     setSelectedNumber(0);
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -115,10 +108,10 @@ export default function ExercisesScreen() {
       />
       <View style={styles.bottomRight}>
         <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setAddExerciseModalVisible(true)}
+          style={styles.addButton}
+          onPress={() => setAddExerciseModalVisible(true)}
         >
-            <Text style={styles.addButtonText}>+</Text>
+          <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
       </View>
 
@@ -159,7 +152,7 @@ export default function ExercisesScreen() {
         </View>
       </Modal>
 
-      {/* Modal for selecting exercise */}
+      {/* Modal when user selects an exercise */}
       <Modal
         transparent={true}
         visible={selectedExerciseModalVisible}
@@ -197,19 +190,6 @@ export default function ExercisesScreen() {
                 <Text style={styles.submitButtonText}>✓ Confirm</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal for loading (waiting for log creation) */}
-      <Modal
-        transparent={true}
-        visible={createLogLoading}
-        onRequestClose={() => setCreateLogLoading(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { width: "40%" }]}>
-            <ActivityIndicator size={35} color={Colours.blue}/>
           </View>
         </View>
       </Modal>
@@ -268,7 +248,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     alignItems: "center",
-
   },
   addButtonText: {
     color: Colours.text,

@@ -5,7 +5,8 @@ export async function fetchLogs(personName, setLogs) {
     const { data, error } = await supabase
       .from("exerciselog")
       .select("*")
-      .eq("person", personName);
+      .eq("person", personName)
+      .order("date", { ascending: true });
 
     if (error) {
       alert(error.message);
