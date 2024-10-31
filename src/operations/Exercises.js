@@ -2,7 +2,7 @@ import { supabase } from "../lib/supabase";
 
 export async function fetchExercises(setExercises) {
   try {
-    const { data, error } = await supabase.from("exercises").select("*");
+    const { data, error } = await supabase.from("exercises").select("*").order("name");
 
     if (error) {
       alert(error.message);
