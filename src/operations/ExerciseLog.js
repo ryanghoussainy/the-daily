@@ -36,3 +36,24 @@ export async function createLog(personName, exerciseID, date, reps) {
     alert(error.message);
   }
 }
+
+export async function getLastLog(personName, exerciseName) {
+  try {
+    const { data, error } = await supabase
+      .from("exerciselog")
+      .select("*")
+      .eq("person", personName)
+      .eq("exercise", exerciseName)
+      .order("date", { ascending: false })
+      .limit(1);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    return data[0]?.reps || 0
+  } catch (error) {
+    alert(error.message);
+  }
+}
