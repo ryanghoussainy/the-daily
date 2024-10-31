@@ -259,14 +259,13 @@ export default function StatsScreen() {
             {/* Tooltip */}
             {tooltip.visible && (
               <View
-                style={{
-                  position: "absolute",
-                  left: tooltip.x + (tooltip.x > chartWidth / 2 ? -145 : 45),
-                  top: tooltip.y - 60,
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  padding: 5,
-                  borderRadius: 5,
-                }}
+                style={[
+                  styles.tooltip,
+                  {
+                    left: tooltip.x + (tooltip.x > chartWidth / 2 ? -145 : 45),
+                    top: tooltip.y - 60, 
+                  },
+                ]}
               >
                 {tooltip.values.map((point, index) => (
                   <Text
@@ -326,5 +325,11 @@ const styles = StyleSheet.create({
   },
   topButtonText: {
     color: Colours.darkgrey,
+  },
+  tooltip: {
+    position: "absolute",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    padding: 5,
+    borderRadius: 5,
   },
 });
