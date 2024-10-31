@@ -14,7 +14,7 @@ import { Input } from "@rneui/themed";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
-import { createLog } from "../operations/ExerciseLog";
+import { createLog, getLastLog } from "../operations/ExerciseLog";
 
 export default function ExercisesScreen() {
   // Navigation
@@ -47,6 +47,36 @@ export default function ExercisesScreen() {
 
   // Selected exercise name
   const [selectedExercise, setSelectedExercise] = useState({});
+
+  // States for keeping track of exercises' previous values
+  const [exercisesPrev, setExercisesPrev] = useState({});
+
+  // Get the exercises' previous values once
+  useEffect(() => {
+    const fetchPreviousValues = async () => {
+      const prevValues = await Promise.all(
+        exercises.map(async (ex) => ({
+          [ex.name]: await getLastLog("Ryan", ex.name),
+        }))
+      );
+
+      // Combine all previous values into a single object
+      const prevValuesObject = prevValues.reduce((acc, curr) => {
+        return { ...acc, ...curr };
+      }, {});
+
+      setExercisesPrev(prevValuesObject);
+    };
+
+    fetchPreviousValues();
+  }, [exercises]);
+
+  // When user selects an exercise, change default picker value to last value
+  useEffect(() => {
+    setSelectedNumber(exercisesPrev[selectedExercise.name]);
+  }, [selectedExerciseModalVisible]);
+
+  // When user selects exercise, get last
 
   const handleAddExercise = async () => {
     if (newExerciseName == "" || !nameAvailable) {
@@ -91,7 +121,6 @@ export default function ExercisesScreen() {
 
   const handleCloseExerciseModal = () => {
     setSelectedExerciseModalVisible(false);
-    setSelectedNumber(0);
   };
 
   return (
