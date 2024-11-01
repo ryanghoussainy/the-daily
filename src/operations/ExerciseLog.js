@@ -57,3 +57,21 @@ export async function getLastLog(personName, exerciseName) {
     alert(error.message);
   }
 }
+
+export async function updateLog(personName, exerciseName, date, newValue) {
+  try {
+    const { error } = await supabase
+      .from("exerciselog")
+      .update({ reps: newValue })
+      .eq("person", personName)
+      .eq("exercise", exerciseName)
+      .eq("date", date);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+  } catch (error) {
+    alert(error.message);
+  }
+}
