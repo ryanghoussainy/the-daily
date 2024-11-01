@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Dimensions,
@@ -16,7 +16,8 @@ import { fetchExercises } from "../operations/Exercises";
 import {
   GestureHandlerRootView,
   PanGestureHandler,
-  State,
+  TapGestureHandler,
+  TouchableWithoutFeedback,
 } from "react-native-gesture-handler";
 import { Circle } from "react-native-svg";
 
@@ -24,9 +25,6 @@ const CHART_TOP_MARGIN = 75;
 
 // offset for y axis values
 const YAXIS_OFFSET = 64;
-
-// offset for space under graph
-const BOTTOM_OFFSET = 58;
 
 export default function StatsScreen() {
   // Dynamic width in case of resizing
@@ -125,13 +123,13 @@ export default function StatsScreen() {
       index: clampedIndex,
       points: data.datasets.map((dataset, idx) => ({
         datasetIndex: idx,
-        value: dataset.data[clampedIndex], // Get value at the clamped index
+        value: dataset.data[clampedIndex],
         exerciseName: exerciseNames[idx],
       })),
     };
   };
 
-  const handleGesture = ({ nativeEvent }) => {
+  const handleGesture = async ({ nativeEvent }) => {
     const gestureX = nativeEvent.x;
     const gestureY = nativeEvent.y;
 
@@ -147,7 +145,7 @@ export default function StatsScreen() {
       const tooltipX =
         (index * (chartWidth - YAXIS_OFFSET)) /
           (data.datasets[0].data.length - 1) +
-        YAXIS_OFFSET; // Fixed position based on data point
+        YAXIS_OFFSET;
       setTooltip({
         visible: true,
         x: tooltipX,
@@ -160,13 +158,6 @@ export default function StatsScreen() {
       if (tooltip.visible) {
         setTooltip({ ...tooltip, visible: false });
       }
-    }
-  };
-
-  const handleGestureStateChange = ({ nativeEvent }) => {
-    if (nativeEvent.state === State.END) {
-      // Hide tooltip when gesture ends
-      setTooltip({ ...tooltip, visible: false });
     }
   };
 
@@ -205,89 +196,108 @@ export default function StatsScreen() {
     return (
       <Circle
         key={`dot-${lineIndex}-${dot.index}`}
-        cx={dot.x} // X position based on datasetIndex
-        cy={dot.y} // Y position based on datasetIndex
-        r={size} // Set dynamic radius
+        cx={dot.x}
+        cy={dot.y}
+        r={size}
         fill={data.datasets[lineIndex].color()} // Get color from dataset
       />
     );
   };
 
+  // Hide tooltip when user taps outside of the chart
+  const handleOutsideTap = () => {
+    if (tooltip.visible) {
+      setTooltip({ ...tooltip, visible: false });
+    }
+  };
+
   return (
     <GestureHandlerRootView style={styles.container}>
-      {/* Title */}
-      <Text style={styles.title}>Statistics</Text>
-
-      {/* Shuffle Colours Button */}
-      <TouchableOpacity
-        style={styles.topButton}
-        onPress={() => shuffleColours()}
+      <TouchableWithoutFeedback
+        onPress={handleOutsideTap}
+        style={styles.container}
       >
-        <Text style={styles.topButtonText}>Shuffle Colours</Text>
-      </TouchableOpacity>
+        <View style={styles.container}>
+          {/* Title */}
+          <Text style={styles.title}>Statistics</Text>
 
-      {/* Chart */}
-      {loadingLogs ? (
-        <ActivityIndicator />
-      ) : (
-        <PanGestureHandler
-          onGestureEvent={handleGesture}
-          onHandlerStateChange={handleGestureStateChange}
-        >
-          <View>
-            <LineChart
-              data={data}
-              width={chartWidth}
-              height={chartHeight}
-              chartConfig={{
-                backgroundGradientFrom: Colours.bg,
-                backgroundGradientTo: Colours.bg,
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                propsForDots: {
-                  r: "0",
-                  strokeWidth: "0",
-                },
-              }}
-              bezier={false} // Non-smooth lines
-              fromZero={true}
-              withVerticalLines={false}
-              style={styles.chart}
-              renderDotContent={renderDot}
+          {/* Shuffle Colours Button */}
+          <TouchableOpacity
+            style={styles.topButton}
+            onPress={() => shuffleColours()}
+          >
+            <Text style={styles.topButtonText}>Shuffle Colours</Text>
+          </TouchableOpacity>
+
+          {/* Chart */}
+          {loadingLogs ? (
+            <ActivityIndicator />
+          ) : (
+            <TapGestureHandler onHandlerStateChange={handleGesture}>
+              <PanGestureHandler onGestureEvent={handleGesture}>
+                <View>
+                  <LineChart
+                    data={data}
+                    width={chartWidth}
+                    height={chartHeight}
+                    chartConfig={{
+                      backgroundGradientFrom: Colours.bg,
+                      backgroundGradientTo: Colours.bg,
+                      decimalPlaces: 0,
+                      color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                      propsForDots: {
+                        r: "0",
+                        strokeWidth: "0",
+                      },
+                    }}
+                    bezier={false} // Non-smooth lines
+                    fromZero={true}
+                    withVerticalLines={false}
+                    style={styles.chart}
+                    renderDotContent={renderDot}
+                  />
+
+                  {/* Tooltip */}
+                  {tooltip.visible && (
+                    <View
+                      style={[
+                        styles.tooltip,
+                        {
+                          left:
+                            tooltip.x +
+                            (tooltip.x > chartWidth / 2 ? -145 : 45),
+                          top: tooltip.y - 60,
+                        },
+                      ]}
+                    >
+                      {tooltip.values.map((point, index) => (
+                        <Text
+                          key={index}
+                          style={{ color: data.datasets[index].color() }}
+                        >
+                          {point.exerciseName}: {point.value}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </PanGestureHandler>
+            </TapGestureHandler>
+          )}
+
+          {/* Back button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons
+              name="arrow-back-outline"
+              size={28}
+              color={Colours.text}
             />
-
-            {/* Tooltip */}
-            {tooltip.visible && (
-              <View
-                style={[
-                  styles.tooltip,
-                  {
-                    left: tooltip.x + (tooltip.x > chartWidth / 2 ? -145 : 45),
-                    top: tooltip.y - 60, 
-                  },
-                ]}
-              >
-                {tooltip.values.map((point, index) => (
-                  <Text
-                    key={index}
-                    style={{ color: data.datasets[index].color() }}
-                  >
-                    {point.exerciseName}: {point.value}
-                  </Text>
-                ))}
-              </View>
-            )}
-          </View>
-        </PanGestureHandler>
-      )}
-
-      {/* Back button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="arrow-back-outline" size={28} color={Colours.text} />
-      </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
+      </TouchableWithoutFeedback>
     </GestureHandlerRootView>
   );
 }
