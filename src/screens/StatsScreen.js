@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Dimensions,
@@ -10,13 +10,14 @@ import { LineChart } from "react-native-chart-kit";
 import Colours from "../config/Colours";
 import { StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import { fetchLogs } from "../operations/ExerciseLog";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { fetchLogs, updateLog } from "../operations/ExerciseLog";
 import { fetchExercises } from "../operations/Exercises";
 import {
   GestureHandlerRootView,
   PanGestureHandler,
   TapGestureHandler,
+  TextInput,
   TouchableWithoutFeedback,
 } from "react-native-gesture-handler";
 import { Circle } from "react-native-svg";
@@ -46,12 +47,13 @@ export default function StatsScreen() {
   // State for logs
   const [logs, setLogs] = useState([]);
 
+  const _fetchLogs = async () => {
+    setLoadingLogs(true);
+    await fetchLogs("Ryan", setLogs);
+    setLoadingLogs(false);
+  };
+
   useEffect(() => {
-    const _fetchLogs = async () => {
-      setLoadingLogs(true);
-      await fetchLogs("Ryan", setLogs);
-      setLoadingLogs(false);
-    };
     _fetchLogs();
   }, []);
 
@@ -73,7 +75,7 @@ export default function StatsScreen() {
   const filterLogs = (exerciseName) => {
     return logs
       .filter((log) => log.exercise === exerciseName)
-      .map((log) => log.reps);
+      .map((log) => ({ reps: log.reps, date: log.date }));
   };
 
   // Get random RGBA values (opacity is always 1), used for shuffling chart colours
@@ -129,7 +131,12 @@ export default function StatsScreen() {
     };
   };
 
-  const handleGesture = async ({ nativeEvent }) => {
+  // Function used to handle the gesture to display the tooltip
+  // Also used for the tap gesture to hide the tooltip
+  const showTooltip = async ({ nativeEvent }) => {
+    // Skip if the user is in edit mode
+    if (isEditing) return;
+
     const gestureX = nativeEvent.x;
     const gestureY = nativeEvent.y;
 
@@ -168,7 +175,7 @@ export default function StatsScreen() {
     // Data
     datasets: exerciseNames.map((exerciseName) => {
       return {
-        data: filterLogs(exerciseName),
+        data: filterLogs(exerciseName).map((log) => log.reps),
         color: (opacity = 1) => exerciseColours[exerciseName],
         strokeWidth: 2,
       };
@@ -209,6 +216,106 @@ export default function StatsScreen() {
     if (tooltip.visible) {
       setTooltip({ ...tooltip, visible: false });
     }
+
+    // Reset editing states
+    setIsEditing(false);
+    setNewExerciseValue(null);
+    setExerciseIndex(null);
+  };
+
+  // State to handle if the user is editing a value
+  const [isEditing, setIsEditing] = useState(false);
+  const [newExerciseValue, setNewExerciseValue] = useState(null);
+  const [exerciseIndex, setExerciseIndex] = useState(null);
+
+  // Function to submit the edited value
+  const handleEditSubmit = async (newValue) => {
+    // Parse the new value
+    const updatedValue = parseInt(newValue);
+
+    if (isNaN(updatedValue) || exerciseIndex === null) return;
+
+    // Get the specific exercise name and date for the selected index
+    const selectedExercise = exerciseNames[exerciseIndex];
+    // Get logs for the selected exercise
+    const exerciseLogs = filterLogs(selectedExercise);
+    // Get date for the selected index
+    const selectedDate = exerciseLogs[tooltip.index]?.date;
+
+    if (selectedDate) {
+      // Update the value in the logs
+      await updateLog("Ryan", selectedExercise, selectedDate, updatedValue);
+
+      // Refresh logs
+      _fetchLogs();
+
+      // Reset editing states
+      setIsEditing(false);
+      setNewExerciseValue(null);
+      setExerciseIndex(null);
+
+      // Refresh tooltip
+      setTooltip({
+        ...tooltip,
+        values: tooltip.values.map((point, idx) =>
+          idx === exerciseIndex ? { ...point, value: updatedValue } : point
+        ),
+      });
+    }
+  };
+
+  // Function to render Tooltip with editable fields
+  const renderTooltip = () => {
+    return (
+      tooltip.visible && (
+        <View
+          style={[
+            styles.tooltip,
+            {
+              left: tooltip.x + (tooltip.x > chartWidth / 2 ? -145 : 45),
+              top: tooltip.y - 60,
+            },
+          ]}
+        >
+          {tooltip.values
+            .filter((point) => point.value !== undefined) // Ensure value is defined
+            .map((point, index) => (
+              <View style={styles.sideBySide} key={index}>
+                {/* Edit button */}
+                <TouchableOpacity
+                  style={styles.edit}
+                  onPressIn={() => {
+                    setIsEditing(true);
+                    setNewExerciseValue(point.value.toString());
+                    setExerciseIndex(index);
+                  }}
+                >
+                  <Feather name="edit-2" size={20} color={Colours.text} />
+                </TouchableOpacity>
+
+                {/* Conditionally render Text or TextInput */}
+                {isEditing && exerciseIndex === index ? (
+                  <TextInput
+                    value={newExerciseValue}
+                    onChangeText={setNewExerciseValue}
+                    onSubmitEditing={() => handleEditSubmit(newExerciseValue)}
+                    style={[
+                      styles.input,
+                      { color: data.datasets[index].color() },
+                    ]}
+                    keyboardType="numeric"
+                    autoFocus
+                  />
+                ) : (
+                  <Text style={{ color: data.datasets[index].color() }}>
+                    {point.exerciseName}: {point.value}
+                  </Text>
+                )}
+              </View>
+            ))}
+        </View>
+      )
+    );
   };
 
   return (
@@ -233,8 +340,8 @@ export default function StatsScreen() {
           {loadingLogs ? (
             <ActivityIndicator />
           ) : (
-            <TapGestureHandler onHandlerStateChange={handleGesture}>
-              <PanGestureHandler onGestureEvent={handleGesture}>
+            <TapGestureHandler onHandlerStateChange={showTooltip}>
+              <PanGestureHandler onGestureEvent={showTooltip}>
                 <View>
                   <LineChart
                     data={data}
@@ -245,10 +352,7 @@ export default function StatsScreen() {
                       backgroundGradientTo: Colours.bg,
                       decimalPlaces: 0,
                       color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                      propsForDots: {
-                        r: "0",
-                        strokeWidth: "0",
-                      },
+                      propsForDots: { r: "0", strokeWidth: "0" },
                     }}
                     bezier={false} // Non-smooth lines
                     fromZero={true}
@@ -258,28 +362,7 @@ export default function StatsScreen() {
                   />
 
                   {/* Tooltip */}
-                  {tooltip.visible && (
-                    <View
-                      style={[
-                        styles.tooltip,
-                        {
-                          left:
-                            tooltip.x +
-                            (tooltip.x > chartWidth / 2 ? -145 : 45),
-                          top: tooltip.y - 60,
-                        },
-                      ]}
-                    >
-                      {tooltip.values.map((point, index) => (
-                        <Text
-                          key={index}
-                          style={{ color: data.datasets[index].color() }}
-                        >
-                          {point.exerciseName}: {point.value}
-                        </Text>
-                      ))}
-                    </View>
-                  )}
+                  {renderTooltip()}
                 </View>
               </PanGestureHandler>
             </TapGestureHandler>
@@ -341,5 +424,25 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     padding: 5,
     borderRadius: 5,
+  },
+  sideBySide: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 5,
+  },
+  edit: {
+    paddingHorizontal: 5,
+    borderRadius: 5,
+  },
+  input: {
+    backgroundColor: Colours.bg,
+    borderColor: Colours.text,
+    borderWidth: 1,
+    padding: 5,
+    borderRadius: 5,
+    width: 60,
+    color: Colours.text,
+    fontSize: 14,
+    textAlign: "center",
   },
 });
