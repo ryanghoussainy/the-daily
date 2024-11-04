@@ -301,13 +301,13 @@ export default function StatsScreen() {
                     onSubmitEditing={() => handleEditSubmit(newExerciseValue)}
                     style={[
                       styles.input,
-                      { color: data.datasets[index].color() },
+                      { color: exerciseColours[point.exerciseName] },
                     ]}
                     keyboardType="numeric"
                     autoFocus
                   />
                 ) : (
-                  <Text style={{ color: data.datasets[index].color() }}>
+                  <Text style={{ color: exerciseColours[point.exerciseName] }}>
                     {point.exerciseName}: {point.value}
                   </Text>
                 )}
